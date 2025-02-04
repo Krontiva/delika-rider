@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "Delika Rider",
+    "slug": "delivery-rider-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dibelaba.deliveryriderapp",
+      "userInterfaceStyle": "automatic",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification",
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
+        "NSLocationWhenInUseUsageDescription": "We need your location to show nearby orders and track deliveries",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location in the background to track your deliveries and update customers",
+        "NSLocationAlwaysUsageDescription": "We need your location in the background to track your deliveries and update customers",
+        "NSLocationTemporaryUsageDescriptionDictionary": {
+          "DeliveryTracking": "We need precise location to accurately track your deliveries"
+        }
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyAdv28EbwKXqvlKo2henxsKMD-4EKB20l8"
+      }
+    },
+    "android": {
+      "userInterfaceStyle": "automatic",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "icon": "./assets/icon.png",
+      "package": "com.dibelaba.deliveryriderapp",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.CALL_PHONE"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAdv28EbwKXqvlKo2henxsKMD-4EKB20l8"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "We need your location to track deliveries and show nearby orders",
+          "locationAlwaysPermission": "We need your location in the background to track deliveries",
+          "locationWhenInUsePermission": "We need your location to show nearby orders",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "459eca2a-b67f-429b-90b0-3678b4a5d47a"
+      }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/459eca2a-b67f-429b-90b0-3678b4a5d47a"
+    }
+  }
+}
