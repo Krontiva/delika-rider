@@ -96,6 +96,9 @@
         "projectId": "459eca2a-b67f-429b-90b0-3678b4a5d47a"
       }
     },
-    "runtimeVersion": "1.0.0"
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "enabled": false
+    }
   }
 }

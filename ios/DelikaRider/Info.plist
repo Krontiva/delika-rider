@@ -55,14 +55,14 @@
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>We need your location to track deliveries and show nearby orders</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>We need your location in the background to track deliveries</string>
+    <string>We need your location in the background to track your deliveries and update customers</string>
     <key>NSLocationTemporaryUsageDescriptionDictionary</key>
     <dict>
       <key>DeliveryTracking</key>
       <string>We need precise location to accurately track your deliveries</string>
     </dict>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need your location to show nearby orders</string>
+    <string>We need your location to show nearby orders and track deliveries</string>
     <key>UIBackgroundModes</key>
     <array>
       <string>location</string>
