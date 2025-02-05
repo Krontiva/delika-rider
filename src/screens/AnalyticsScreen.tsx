@@ -8,8 +8,10 @@ import {
   RefreshControl,
   Dimensions,
   TouchableOpacity,
+  SafeAreaView,
+  Platform,
 } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import { BarChart, LineChart } from 'react-native-chart-kit';
 import { DatePicker } from '../components/DatePicker';
 import { fetchOrders } from '../services/api';
 import { Order } from '../types/order';
@@ -126,9 +128,9 @@ export const AnalyticsScreen: React.FC = () => {
     );
 
     const totalHours = completedOrders.reduce((sum, order) => {
-      if (order.createdAt && order.orderCompletedTime) {
+      if (order.created_at && order.orderCompletedTime) {
         const duration = new Date(order.orderCompletedTime).getTime() - 
-                        new Date(order.createdAt).getTime();
+                        new Date(order.created_at).getTime();
         return sum + (duration / (1000 * 60 * 60)); // Convert to hours
       }
       return sum;
@@ -183,7 +185,7 @@ export const AnalyticsScreen: React.FC = () => {
       switch (filterType) {
         case 'weekly':
           if (dateRange) {
-            filteredOrders = fetchedOrders.filter(order => {
+            filteredOrders = fetchedOrders.filter((order: Order) => {
               const orderDate = new Date(order.created_at);
               return orderDate >= dateRange.start && 
                      orderDate <= dateRange.end;
@@ -193,7 +195,7 @@ export const AnalyticsScreen: React.FC = () => {
 
         case 'monthly':
           if (dateRange) {
-            filteredOrders = fetchedOrders.filter(order => {
+            filteredOrders = fetchedOrders.filter((order: Order) => {
               const orderDate = new Date(order.created_at);
               return orderDate >= dateRange.start && 
                      orderDate <= dateRange.end;
@@ -203,7 +205,7 @@ export const AnalyticsScreen: React.FC = () => {
 
         case 'range':
           if (dateRange) {
-            filteredOrders = fetchedOrders.filter(order => {
+            filteredOrders = fetchedOrders.filter((order: Order) => {
               const orderDate = new Date(order.created_at);
               return orderDate >= dateRange.start && 
                      orderDate <= dateRange.end;
@@ -213,7 +215,7 @@ export const AnalyticsScreen: React.FC = () => {
 
         case 'daily':
         default:
-          filteredOrders = fetchedOrders.filter(order => 
+          filteredOrders = fetchedOrders.filter((order: Order) => 
             isSameDay(new Date(order.created_at), selectedDate)
           );
           break;
@@ -266,116 +268,125 @@ export const AnalyticsScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF5722" />
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF5722" />
+        </View>
+      </SafeAreaView>
     );
   }
 
   const analytics = calculateAnalytics(orders);
 
+  const chartData = getChartData(orders);
+
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <TouchableOpacity 
-            style={[styles.filterButton, filterType === 'daily' && styles.filterButtonActive]}
-            onPress={() => handleFilterChange('daily')}
-          >
-            <Text style={[styles.filterText, filterType === 'daily' && styles.filterTextActive]}>
-              Daily
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filterType === 'weekly' && styles.filterButtonActive]}
-            onPress={() => handleFilterChange('weekly')}
-          >
-            <Text style={[styles.filterText, filterType === 'weekly' && styles.filterTextActive]}>
-              Weekly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filterType === 'monthly' && styles.filterButtonActive]}
-            onPress={() => handleFilterChange('monthly')}
-          >
-            <Text style={[styles.filterText, filterType === 'monthly' && styles.filterTextActive]}>
-              Monthly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filterType === 'range' && styles.filterButtonActive]}
-            onPress={() => handleFilterChange('range')}
-          >
-            <Text style={[styles.filterText, filterType === 'range' && styles.filterTextActive]}>
-              Range
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <TouchableOpacity 
+              style={[styles.filterButton, filterType === 'daily' && styles.filterButtonActive]}
+              onPress={() => handleFilterChange('daily')}
+            >
+              <Text style={[styles.filterText, filterType === 'daily' && styles.filterTextActive]}>
+                Daily
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.filterButton, filterType === 'weekly' && styles.filterButtonActive]}
+              onPress={() => handleFilterChange('weekly')}
+            >
+              <Text style={[styles.filterText, filterType === 'weekly' && styles.filterTextActive]}>
+                Weekly
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.filterButton, filterType === 'monthly' && styles.filterButtonActive]}
+              onPress={() => handleFilterChange('monthly')}
+            >
+              <Text style={[styles.filterText, filterType === 'monthly' && styles.filterTextActive]}>
+                Monthly
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.filterButton, filterType === 'range' && styles.filterButtonActive]}
+              onPress={() => handleFilterChange('range')}
+            >
+              <Text style={[styles.filterText, filterType === 'range' && styles.filterTextActive]}>
+                Range
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
 
-      {filterType === 'daily' && (
-        <DatePicker
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-        />
-      )}
-      {filterType === 'range' && (
-        <RangePicker 
-          dateRange={dateRange}
-          onDateChange={setDateRange}
-        />
-      )}
-
-      <View style={styles.chartCard}>
-        <Text style={styles.chartTitle}>Delivery Status</Text>
-        <View style={styles.chartContainer}>
-          <BarChart
-            data={getChartData(orders)}
-            width={screenWidth - 64}
-            height={220}
-            chartConfig={chartConfig}
-            style={styles.chart}
-            showValuesOnTopOfBars
-            fromZero
-            yAxisLabel=""
-            yAxisSuffix=""
-            withInnerLines={false}
-            segments={4}
-            verticalLabelRotation={0}
-            horizontalLabelRotation={0}
+        {filterType === 'daily' && (
+          <DatePicker
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
           />
-        </View>
-      </View>
+        )}
+        {filterType === 'range' && (
+          <RangePicker 
+            dateRange={dateRange}
+            onDateChange={setDateRange}
+          />
+        )}
 
-      <View style={styles.row}>
-        <View style={[styles.card, styles.halfCard]}>
-          <Text style={styles.cardTitle}>Total Earnings</Text>
-          <Text style={styles.amount}>₵{analytics.totalEarnings.toFixed(2)}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Orders Overview</Text>
+          <View style={styles.card}>
+            <BarChart
+              data={chartData}
+              width={Dimensions.get('window').width - 40}
+              height={220}
+              yAxisLabel="₵"
+              yAxisSuffix=" "
+              chartConfig={{
+                backgroundColor: '#ffffff',
+                backgroundGradientFrom: '#ffffff',
+                backgroundGradientTo: '#ffffff',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(255, 87, 34, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                barPercentage: 0.7,
+              }}
+              style={styles.chart}
+              showValuesOnTopOfBars={true}
+            />
+          </View>
         </View>
-        <View style={[styles.card, styles.halfCard]}>
-          <Text style={styles.cardTitle}>Total Orders</Text>
-          <Text style={styles.number}>{analytics.totalOrders}</Text>
-        </View>
-      </View>
 
-      <View style={styles.row}>
-        <View style={[styles.card, styles.halfCard]}>
-          <Text style={styles.cardTitle}>Hours Worked</Text>
-          <Text style={styles.number}>{analytics.totalHours}</Text>
+        <View style={[styles.section, styles.lastSection]}>
+          <Text style={styles.sectionTitle}>Statistics</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>42</Text>
+              <Text style={styles.statLabel}>Deliveries</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>4.8</Text>
+              <Text style={styles.statLabel}>Rating</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>₵2.4k</Text>
+              <Text style={styles.statLabel}>Earnings</Text>
+            </View>
+          </View>
         </View>
-        <View style={[styles.card, styles.halfCard]}>
-          <Text style={styles.cardTitle}>Avg Delivery Time</Text>
-          <Text style={styles.number}>
-            {analytics.averageDeliveryTime.toFixed(1)}h
-          </Text>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -383,78 +394,73 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    paddingVertical: 40,
+    paddingTop: Platform.OS === 'android' ? 25 : 0, // Add padding for Android
   },
-  loadingContainer: {
+  scrollView: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  chartCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    margin: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    alignItems: 'center',
+  scrollContent: {
+    paddingVertical: 20,
   },
-  chartContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+  section: {
+    marginBottom: 24,
+    paddingHorizontal: 20,
   },
-  chartTitle: {
-    fontSize: 18,
+  lastSection: {
+    marginBottom: 40, // Extra margin for last section
+  },
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 16,
-    textAlign: 'center',
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 8,
-    paddingRight: 0,
+    color: '#1a1a1a',
   },
   card: {
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 16,
     padding: 16,
-    margin: 16,
-    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  row: {
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
+  },
+  statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginHorizontal: 12,
+    gap: 12,
   },
-  halfCard: {
+  statCard: {
     flex: 1,
-    margin: 4,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  cardTitle: {
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FF5722',
+    marginBottom: 4,
+  },
+  statLabel: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 8,
-  },
-  amount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2196F3',
-  },
-  number: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
   },
   filterContainer: {
     paddingHorizontal: 16,
@@ -512,5 +518,10 @@ const styles = StyleSheet.create({
   rangeDividerText: {
     color: '#666',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

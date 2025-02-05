@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 
-export const OrderDetailsScreen: React.FC = () => {
+export const OrderReceipt: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { order } = route.params as { order: any };

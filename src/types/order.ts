@@ -22,7 +22,7 @@ interface DropOffPoint {
 
 export interface Order {
   id: string;
-  createdAt: string;
+  created_at: string;
   restaurantId: string;
   branchId: string;
   pickup: LocationPoint[];
@@ -47,5 +47,6 @@ export interface Order {
   assignedTime?: string;
   deliveryTime?: string;
   orderReceivedTime?: string;
-  orderCompletedTime?: string; 
+  orderCompletedTime?: string;
+  batchID: string | null;
 } 

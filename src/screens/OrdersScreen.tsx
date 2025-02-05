@@ -7,6 +7,7 @@ import MapView, { Marker, Callout, Polyline, PROVIDER_GOOGLE } from 'react-nativ
 import * as Location from 'expo-location';
 import { LocationService } from '../services/LocationService';
 import { useNavigation } from '@react-navigation/native';
+import { useApp } from '../context/AppContext';
 
 // Add filter type
 type FilterType = 'Pending' | 'Active' | 'Complete' | 'Other';
@@ -29,12 +30,17 @@ const STATUS_COLORS = {
   Completed: '#D2FFAD'
 } as const;
 
+interface GroupedOrders {
+  [batchId: string]: Order[];
+}
+
 export const OrdersScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { userProfile } = useApp();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const COURIER_NAME = 'Judas'; // This could come from user context/state
+  const COURIER_NAME = userProfile?.fullName; // This could come from user context/state
   const [activeFilter, setActiveFilter] = useState<FilterType>('Pending');
   // Add state for current location
   const [currentLocation, setCurrentLocation] = useState<CurrentLocation>({
@@ -42,6 +48,9 @@ export const OrdersScreen: React.FC = () => {
     longitude: -0.1870,
   });
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  // Add refresh interval reference
+  const refreshInterval = React.useRef<NodeJS.Timeout>();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -51,12 +60,7 @@ export const OrdersScreen: React.FC = () => {
 
   const loadOrders = async () => {
     try {
-      const fetchedOrders = await fetchOrders(COURIER_NAME);
-      console.log('Sample Order:', fetchedOrders[0]); // Log first order
-      console.log('Location Data:', {
-        pickup: fetchedOrders[0]?.pickup,
-        dropOff: fetchedOrders[0]?.dropOff
-      });
+      const fetchedOrders = await fetchOrders(COURIER_NAME || 'Unknown Courier');
       setOrders(fetchedOrders);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -66,9 +70,23 @@ export const OrdersScreen: React.FC = () => {
     }
   };
 
+  // Set up auto-refresh
   useEffect(() => {
+    // Initial load
     loadOrders();
-  }, []);
+
+    // Set up interval for refresh
+    refreshInterval.current = setInterval(() => {
+      loadOrders();
+    }, 30000); // 30 seconds
+
+    // Cleanup on unmount
+    return () => {
+      if (refreshInterval.current) {
+        clearInterval(refreshInterval.current);
+      }
+    };
+  }, [COURIER_NAME]); // Add COURIER_NAME as dependency
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -123,7 +141,7 @@ export const OrdersScreen: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            orderStatus: 'Cancelled',
+            orderStatus: 'ReadyForPickup',
             cancelledTime: new Date().toISOString(),
           }),
         }
@@ -158,28 +176,81 @@ export const OrdersScreen: React.FC = () => {
     }
   };
 
-  // Filter orders based on status
+  const groupOrdersByBatch = (orders: Order[]): Order[] => {
+    // First, separate batched and non-batched orders
+    const batchedOrders: GroupedOrders = {};
+    const nonBatchedOrders: Order[] = [];
+
+    orders.forEach(order => {
+      if (order.batchID) {
+        if (!batchedOrders[order.batchID]) {
+          batchedOrders[order.batchID] = [];
+        }
+        batchedOrders[order.batchID].push(order);
+      } else {
+        nonBatchedOrders.push(order);
+      }
+    });
+
+    // For each batch, only take the first order and attach all order numbers
+    const processedBatchOrders = Object.entries(batchedOrders).map(([batchId, orders]) => ({
+      ...orders[0],
+      batchedOrderNumbers: orders.map(o => o.orderNumber),
+    }));
+
+    // Combine non-batched orders with one representative from each batch
+    return [...nonBatchedOrders, ...processedBatchOrders];
+  };
+
+  // Update getFilteredOrders function to match the count logic
   const getFilteredOrders = () => {
+    let filteredOrders = orders;
+    
     switch (activeFilter) {
       case 'Pending':
-        return orders.filter(order => order.orderStatus === 'ReadyForPickup');
+        filteredOrders = orders.filter(order => order.orderStatus === 'Assigned'); // Changed from 'Assigned'
+        break;
+      case 'Active':
+        filteredOrders = orders.filter(order => 
+          ['Delivered', 'Pickup', 'OnTheWay'].includes(order.orderStatus)
+        );
+        break;
+      case 'Complete':
+        filteredOrders = orders.filter(order => order.orderStatus === 'Completed');
+        break;
+      case 'Other':
+        filteredOrders = orders.filter(order => 
+          ['Cancelled', 'DeliveryFailed'].includes(order.orderStatus)
+        );
+        break;
+    }
+
+    // Group orders by batch after filtering
+    return groupOrdersByBatch(filteredOrders);
+  };
+
+  // getFilterCount stays the same since it's already correct
+  const getFilterCount = (filter: FilterType) => {
+    switch (filter) {
+      case 'Pending':
+        return orders.filter(order => order.orderStatus === 'Assigned').length;
       case 'Active':
         return orders.filter(order => 
-          ['Assigned', 'Pickup', 'OnTheWay'].includes(order.orderStatus)
-        );
+          ['Delivered', 'Pickup', 'OnTheWay'].includes(order.orderStatus)
+        ).length;
       case 'Complete':
-        return orders.filter(order => ['Completed', 'Delivered'].includes(order.orderStatus));
+        return orders.filter(order => order.orderStatus === 'Completed').length;
       case 'Other':
         return orders.filter(order => 
           ['Cancelled', 'DeliveryFailed'].includes(order.orderStatus)
-        );
+        ).length;
       default:
-        return orders;
+        return 0;
     }
   };
 
-  // Add filter tabs
-  const renderFilterTabs = () => (
+  // Add useCallback for filter tabs to prevent unnecessary re-renders
+  const renderFilterTabs = React.useCallback(() => (
     <View style={styles.filterContainer}>
       {[
         { id: 'Pending', count: getFilterCount('Pending') },
@@ -194,7 +265,12 @@ export const OrdersScreen: React.FC = () => {
           ]}
           onPress={() => setActiveFilter(id as FilterType)}
         >
-          <Text style={styles.filterLabel}>{id}</Text>
+          <Text style={[
+            styles.filterLabel,
+            activeFilter === id && { color: '#FF5722' }
+          ]}>
+            {id}
+          </Text>
           <View style={[
             styles.countBadge,
             activeFilter === id && styles.activeCountBadge
@@ -209,25 +285,7 @@ export const OrdersScreen: React.FC = () => {
         </TouchableOpacity>
       ))}
     </View>
-  );
-
-  // Get count for each filter
-  const getFilterCount = (filter: FilterType) => {
-    switch (filter) {
-      case 'Pending':
-        return orders.filter(order => order.orderStatus === 'ReadyForPickup').length;
-      case 'Active':
-        return orders.filter(order => 
-          ['Assigned', 'Pickup', 'OnTheWay'].includes(order.orderStatus)
-        ).length;
-      case 'Complete':
-        return orders.filter(order => order.orderStatus === 'Completed').length;
-      case 'Other':
-        return orders.filter(order => 
-          ['Cancelled', 'DeliveryFailed'].includes(order.orderStatus)
-        ).length;
-    }
-  };
+  ), [orders, activeFilter]); // Add dependencies
 
   // Add function to get current location
   const getCurrentLocation = async () => {

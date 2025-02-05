@@ -15,6 +15,7 @@ export type RootStackParamList = {
   };
   OrderStartScreen: {
     order: Order;
+    batchedOrders?: Order[];
   };
   OrderDropoffScreen: {
     order: Order;
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   };
   Settings: undefined;
   AccountInformation: undefined;
+  Terms: undefined;
 };
 
 declare global {

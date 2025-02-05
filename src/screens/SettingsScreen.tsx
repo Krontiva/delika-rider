@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   Linking,
   Platform,
+  Switch,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useApp } from '../context/AppContext';
@@ -19,31 +20,39 @@ import { RootStackParamList } from '../types/navigation';
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const SettingsScreen: React.FC = () => {
-  const { colors } = useApp();
-  const navigation = useNavigation<SettingsScreenNavigationProp>();
-  const [userData, setUserData] = React.useState<{
-    fullName: string;
-    rating?: number;
-  } | null>(null);
+  const navigation = useNavigation();
+  const { colors, userProfile, setUserProfile, updateUserStatus } = useApp();
+  const [isOnline, setIsOnline] = useState(userProfile?.Status || false);
 
-  React.useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const userProfile = await AsyncStorage.getItem('userProfile');
-        if (userProfile) {
-          const user = JSON.parse(userProfile);
-          setUserData({
-            fullName: user.fullName || user.name || 'User',
-            rating: user.rating || 4.82,
-          });
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error);
+  const handleStatusToggle = async (value: boolean) => {
+    try {
+      setIsOnline(value);
+      
+      // Update user profile in AsyncStorage
+      if (userProfile) {
+        const updatedProfile = {
+          ...userProfile,
+          Status: value
+        };
+        await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        setUserProfile(updatedProfile);
       }
-    };
 
-    loadUserData();
-  }, []);
+      // You might want to update the status on your backend as well
+      // await updateUserStatus(value);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      // Revert the toggle if there's an error
+      setIsOnline(!value);
+      Alert.alert('Error', 'Failed to update status. Please try again.');
+    }
+  };
+
+  useEffect(() => {
+    if (userProfile) {
+      setIsOnline(userProfile.Status || false);
+    }
+  }, [userProfile]);
 
   const renderListItem = (
     icon: string,
@@ -168,6 +177,29 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
+  const renderStatusToggle = () => (
+    <View style={[styles.listItem, { borderBottomColor: colors.border }]}>
+      <View style={styles.leftContent}>
+        <Icon 
+          name={isOnline ? "radio-outline" : "radio-button-off-outline"} 
+          size={24} 
+          color="#FF5722" 
+          style={styles.icon}
+        />
+        <Text style={[styles.listItemText, { color: colors.text }]}>
+          Online Status
+        </Text>
+      </View>
+      <Switch
+        trackColor={{ false: "#767577", true: "#FF8A65" }}
+        thumbColor={isOnline ? "#FF5722" : "#f4f3f4"}
+        ios_backgroundColor="#767577"
+        onValueChange={handleStatusToggle}
+        value={isOnline}
+      />
+    </View>
+  );
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Profile Section */}
@@ -175,7 +207,13 @@ export const SettingsScreen: React.FC = () => {
         <View style={[styles.avatarContainer, { backgroundColor: '#FFF3E0' }]}>
           <Icon name="person-outline" size={40} color="#FF5722" />
         </View>
-        <Text style={styles.name}>{userData?.fullName || 'Loading...'}</Text>
+        <Text style={styles.name}>{userProfile?.fullName || 'Loading...'}</Text>
+      </View>
+
+      {/* Online Status Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Status</Text>
+        {renderStatusToggle()}
       </View>
 
       {/* Support Section */}
@@ -195,6 +233,12 @@ export const SettingsScreen: React.FC = () => {
       <View style={styles.section}>
         {renderListItem('person-outline', 'Personal info', undefined, handlePersonalInfo)}
         {renderListItem('globe-outline', 'Language', 'English-GB', () => {}, false, true)}
+        {renderListItem(
+          'document-text',
+          'Terms & Conditions',
+          '',
+          () => navigation.navigate('Terms')
+        )}
       </View>
 
       {/* Account Actions */}
@@ -297,5 +341,15 @@ const styles = StyleSheet.create({
   },
   destructiveText: {
     color: '#FF3B30',
+  },
+  statusText: {
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  onlineStatus: {
+    color: '#4CAF50',
+  },
+  offlineStatus: {
+    color: '#757575',
   },
 }); 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -17,11 +17,32 @@ import { OrderStartScreen } from './src/screens/OrderStartScreen';
 import { OrderDropoffScreen } from './src/screens/OrderDropoffScreen';
 import { OrderCompleteScreen } from './src/screens/OrderCompleteScreen';
 import { OTPLogin } from './src/screens/OTPLogin';
-
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import registerNNPushToken from 'native-notify';
+import { registerIndieID } from 'native-notify';
+import axios from 'axios';
+import { OrderReceipt } from './src/screens/OrderReceipt';
+import { TermsScreen } from './src/screens/TermsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
+const APP_ID = "26729";
+const APP_TOKEN = "EcxsXXDddPOcgFcNk198Dp";
+// Set up notification handlers
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+const generateRandomString = () => {
+  return Math.random().toString(36).substring(2, 5).toUpperCase();
+};
 
 function MainTabs() {
   return (
@@ -51,8 +72,20 @@ function MainTabs() {
     </Tab.Navigator>
   );
 }
+async function registerIndie() {
+  const existingDeviceID = await AsyncStorage.getItem('deviceID');
+  if (!existingDeviceID) {
+    const deviceID = `rider_${generateRandomString()}`;
+    await AsyncStorage.setItem('deviceID', deviceID);
+    registerIndieID(deviceID, APP_ID, APP_TOKEN);
+  }
+}
 
 export default function App() {
+
+  registerNNPushToken(APP_ID, APP_TOKEN);
+  registerIndie();
+
   return (
     <AppProvider>
       <NavigationContainer>
@@ -86,8 +119,19 @@ export default function App() {
             component={OrderCompleteScreen as React.ComponentType<any>} 
           />
           <Stack.Screen 
+            name="OrderReceipt" 
+            component={OrderReceipt as React.ComponentType<any>} 
+          />
+          <Stack.Screen 
             name="AccountInformation" 
             component={AccountInformationScreen}
+            options={{
+              headerShown: false
+            }}
+          />
+          <Stack.Screen 
+            name="Terms" 
+            component={TermsScreen}
             options={{
               headerShown: false
             }}

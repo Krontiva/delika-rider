@@ -16,6 +16,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../config/env';
+import { registerIndieID } from 'native-notify';
+import * as Device from 'expo-device';
+import { useApp } from '../context/AppContext';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -49,6 +52,7 @@ export const SignInScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { setUserProfile } = useApp();
 
   const handleLogin = async () => {
     try {
@@ -70,30 +74,48 @@ export const SignInScreen: React.FC = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      if (response.ok) {
+        const data = await response.json();
+        await AsyncStorage.setItem('authToken', data.authToken);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Authentication failed');
+        // Get user profile
+        const userProfile = await getUserProfile();
+        
+        // Register device for notifications
+        const deviceID = await AsyncStorage.getItem('deviceID');
+        
+
+        // Update device ID in database
+        const deviceUpdateResponse = await fetch(
+          `${BASE_URL}/deviceID/${userProfile.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.authToken}`,
+            },
+            body: JSON.stringify({
+              deviceID: deviceID,
+            }),
+          }
+        );
+
+        if (!deviceUpdateResponse.ok) {
+          console.error('Failed to update device ID');
+        }
+
+        // Store user profile
+        await AsyncStorage.setItem('userProfile', JSON.stringify(userProfile));
+        setUserProfile(userProfile);
+
+        // Navigate to OTPLogin with email parameter
+        navigation.replace('OTPLogin', { email });
+      } else {
+        setError('Invalid credentials');
       }
-
-      // Store auth token and user profile
-      await AsyncStorage.setItem('authToken', data.authToken);
-
-      // Get user profile
-      const userProfile = await getUserProfile();
-      console.log(userProfile);
-
-      // Store user profile
-      await AsyncStorage.setItem('userProfile', JSON.stringify(userProfile));
-
-      // Navigate to main app
-      navigation.navigate('OTPLogin', {
-        email: userProfile.email
-      });
-
     } catch (error) {
       console.error('Login error:', error);
-      setError(error instanceof Error ? error.message : 'Login failed');
+      setError('An error occurred during login');
     } finally {
       setIsLoading(false);
     }

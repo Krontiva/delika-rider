@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Alert } from 'react-native';
 
 interface OrderCardProps {
-  order: Order;
+  order: Order & { batchedOrderNumbers?: number[] };
   onAccept: (orderId: string) => void;
   onDecline: (orderId: string) => void;
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
@@ -145,6 +145,65 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
+  if (order.batchID) {
+    return (
+      <TouchableOpacity 
+        style={[styles.card, styles.batchCard]} 
+        onPress={handlePress}
+      >
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.batchTitle}>Batched</Text>
+            <Text style={styles.batchId}>Batch ID #{order.batchID}</Text>
+          </View>
+          <View style={[
+            styles.statusBadge, 
+            { backgroundColor: getStatusColors(order.orderStatus).background }
+          ]}>
+            <Text style={[
+              styles.statusText, 
+              { color: getStatusColors(order.orderStatus).text }
+            ]}>
+              {order.orderStatus}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.batchOrdersContainer}>
+          {order.batchedOrderNumbers?.map((orderNum, index) => (
+            <View key={orderNum} style={styles.orderIdRow}>
+              <Text style={styles.orderIdLabel}>Order #{orderNum}</Text>
+            </View>
+          ))}
+          <View style={styles.locationContainer}>
+            <View style={styles.locationItem}>
+              <Text style={styles.locationLabel}>Pickup</Text>
+              <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                {truncateAddress(order.pickup[0].fromAddress)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.amount}>
+            {order.batchID 
+              ? `${(order.batchedOrderNumbers || []).reduce((sum, _, i) => sum + Number(order.deliveryPrice || 0), 0).toFixed(2)}`
+              : Number(order.deliveryPrice || 0).toFixed(2)
+            } GH₵
+          </Text>
+          <TouchableOpacity
+            style={styles.detailsButton}
+            onPress={handleViewDetailsPress}
+          >
+            <Text style={styles.detailsText}>View Details</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  // Render original card for non-batched orders
   return (
     <TouchableOpacity 
       style={styles.card} 
@@ -187,7 +246,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.amount}>{order.deliveryPrice} GH₵</Text>
+        <Text style={styles.amount}>
+          {order.batchID 
+            ? `${(order.batchedOrderNumbers || []).reduce((sum, _, i) => sum + Number(order.deliveryPrice || 0), 0).toFixed(2)}`
+            : Number(order.deliveryPrice || 0).toFixed(2)
+          } GH₵
+        </Text>
         <TouchableOpacity
           style={styles.detailsButton}
           onPress={handleViewDetailsPress}
@@ -408,5 +472,37 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 16,
     textAlign: 'center',
+  },
+  batchCard: {
+    backgroundColor: '#FFF8E1',
+  },
+  batchTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
+  },
+  batchId: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  batchOrdersContainer: {
+    marginVertical: 12,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+  },
+  orderIdRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  orderIdLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
   },
 }); 

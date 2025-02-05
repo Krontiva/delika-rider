@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "403864169704",
+    "project_id": "delika-7ef97",
+    "storage_bucket": "delika-7ef97.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:403864169704:android:d86b707acdd28b0d2d6d5d",
+        "android_client_info": {
+          "package_name": "com.delika.notifications"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzsJ3K5Uigz9B1jnNFGt3DE1k_wh9ZEp8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:403864169704:android:945aed012477e38f2d6d5d",
+        "android_client_info": {
+          "package_name": "com.dibelaba.deliveryriderapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzsJ3K5Uigz9B1jnNFGt3DE1k_wh9ZEp8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
