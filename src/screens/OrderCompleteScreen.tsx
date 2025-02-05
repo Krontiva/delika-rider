@@ -8,16 +8,78 @@ interface OrderCompleteScreenProps {
   route: {
     params: {
       order: Order;
+      batchedOrders?: Order[];
+      currentBatchIndex?: number;
     };
   };
 }
 
 export const OrderCompleteScreen: React.FC<OrderCompleteScreenProps> = ({ route }) => {
-  const { order } = route.params;
+  const { order, batchedOrders = [], currentBatchIndex = 0 } = route.params;
   const navigation = useNavigation();
 
-  const handleConfirm = () => {
-    navigation.navigate('OrderSuccess', { order });
+  const handleConfirm = async () => {
+    try {
+      // Update current order status to Delivered
+      const response = await fetch(
+        `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${order.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderStatus: 'Completed',
+            orderCompletedTime: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
+      }
+
+      // If this is a batch order, update all orders with same batchID
+      if (order.batchID) {
+        await Promise.all(
+          batchedOrders.map(async (batchOrder) => {
+            if (batchOrder.id !== order.id) { // Skip current order as it's already updated
+              await fetch(
+                `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${batchOrder.id}`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    orderStatus: 'Completed',
+                    orderCompletedTime: new Date().toISOString(),
+                  }),
+                }
+              );
+            }
+          })
+        );
+      }
+
+      if (batchedOrders.length > 0 && currentBatchIndex < batchedOrders.length - 1) {
+        // Move to next order in batch
+        navigation.navigate('OrderStartScreen', {
+          order: batchedOrders[currentBatchIndex + 1],
+          batchedOrders,
+          currentBatchIndex: currentBatchIndex + 1
+        });
+      } else {
+        // All orders completed, move to success screen
+        navigation.navigate('OrderSuccess', { 
+          order,
+          batchedOrders 
+        });
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      Alert.alert('Error', 'Failed to update order status');
+    }
   };
 
   const handleCall = (phoneNumber: string) => {
@@ -57,7 +119,7 @@ export const OrderCompleteScreen: React.FC<OrderCompleteScreenProps> = ({ route 
       <View style={styles.dateContainer}>
         <Icon name="calendar-outline" size={20} color="#666" />
         <Text style={styles.dateText}>
-          {new Date(order.createdAt).toLocaleDateString()}
+          {new Date(order.created_at).toLocaleDateString()}
         </Text>
       </View>
       <View style={styles.statusContainer}>
@@ -101,9 +163,19 @@ export const OrderCompleteScreen: React.FC<OrderCompleteScreenProps> = ({ route 
         <Text style={styles.totalAmount}>{order.deliveryPrice} GH₵</Text>
       </View>
 
+      {batchedOrders.length > 0 && (
+        <Text style={styles.batchProgress}>
+          Order {currentBatchIndex + 1} of {batchedOrders.length}
+        </Text>
+      )}
+
       {/* Confirm Button */}
       <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-        <Text style={styles.confirmButtonText}>Confirm Delivery</Text>
+        <Text style={styles.confirmButtonText}>
+          {currentBatchIndex < batchedOrders.length - 1 
+            ? 'Next Order' 
+            : 'Confirm Delivery'}
+        </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -214,5 +286,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  batchProgress: {
+    margin: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
   },
 }); 

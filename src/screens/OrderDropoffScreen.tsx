@@ -4,18 +4,22 @@ import { useNavigation } from '@react-navigation/native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Order } from '../types/order';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { OrderStatusService } from '../services/OrderStatusService';
 
 interface OrderDropoffScreenProps {
   route: {
     params: {
       order: Order;
+      batchedOrders?: Order[];
+      currentBatchIndex?: number;
     };
   };
 }
 
 export const OrderDropoffScreen: React.FC<OrderDropoffScreenProps> = ({ route }) => {
-  const { order } = route.params;
+  const { order, batchedOrders = [], currentBatchIndex = 0 } = route.params;
   const navigation = useNavigation();
+  const [isLoading, setIsLoading] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{latitude: number; longitude: number}>>([]);
 
   useEffect(() => {
@@ -48,13 +52,45 @@ export const OrderDropoffScreen: React.FC<OrderDropoffScreenProps> = ({ route })
   };
 
   const handleDropoff = async () => {
+    setIsLoading(true);
     try {
-      // Navigate directly to complete screen without OTP
-      navigation.navigate('OrderCompleteScreen', { order });
+      console.log('Updating order:', order.id);
+      const response = await fetch(
+        `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${order.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderStatus: 'Delivered',
+            orderDeliveredTime: new Date().toISOString(),
+          }),
+        }
+      );
+
+      const responseData = await response.json();
+      console.log('API Response:', responseData);
+
+      if (!response.ok) {
+        console.error('Response not OK:', response.status, responseData);
+        throw new Error('Failed to update order status');
+      }
+
+      console.log('Order updated successfully');
+      navigation.navigate('OrderCompleteScreen', {
+        order: { ...order, orderStatus: 'Delivered' },
+        batchedOrders,
+        currentBatchIndex
+      });
     } catch (error) {
-      console.error('Error handling dropoff:', error);
+      console.error('Error updating order:', error);
+      Alert.alert('Error', 'Failed to update order status');
+    } finally {
+      setIsLoading(false);
     }
   };
+
 
   const handleBackPress = () => {
     // Navigate to Orders screen and reset the stack
@@ -178,6 +214,11 @@ export const OrderDropoffScreen: React.FC<OrderDropoffScreenProps> = ({ route })
       </View>
 
       <View style={styles.bottomSheet}>
+        {batchedOrders.length > 0 && (
+          <Text style={styles.batchProgress}>
+            Order {currentBatchIndex + 1} of {batchedOrders.length}
+          </Text>
+        )}
         <Text style={styles.deliveryStatus}>Delivery in progress</Text>
         <Text style={styles.customerName}>{order.customerName}</Text>
         <Text style={styles.orderNumber}>#{order.orderNumber}</Text>
@@ -304,5 +345,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  batchProgress: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 8,
+    textAlign: 'center',
   },
 }); 

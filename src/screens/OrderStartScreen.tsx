@@ -10,12 +10,14 @@ interface OrderStartScreenProps {
   route: {
     params: {
       order: Order;
+      batchedOrders?: Order[];
+      currentBatchIndex?: number;
     };
   };
 }
 
 export const OrderStartScreen: React.FC<OrderStartScreenProps> = ({ route }) => {
-  const { order } = route.params;
+  const { order, batchedOrders = [], currentBatchIndex = 0 } = route.params;
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +38,9 @@ export const OrderStartScreen: React.FC<OrderStartScreenProps> = ({ route }) => 
 
       if (result.success) {
         navigation.navigate('OrderDropoffScreen', { 
-          order: { ...order, orderStatus: 'OnTheWay' } 
+          order: { ...order, orderStatus: 'OnTheWay' },
+          batchedOrders,
+          currentBatchIndex
         });
       } else {
         Alert.alert('Error', result.error || 'Failed to start delivery');
@@ -168,6 +172,11 @@ export const OrderStartScreen: React.FC<OrderStartScreenProps> = ({ route }) => 
       </View>
 
       <View style={styles.bottomSheet}>
+        {batchedOrders.length > 0 && (
+          <Text style={styles.batchProgress}>
+            Order {currentBatchIndex + 1} of {batchedOrders.length}
+          </Text>
+        )}
         <Text style={styles.deliveryStatus}>Delivery in progress</Text>
         <Text style={styles.customerName}>{order.customerName}</Text>
         <Text style={styles.orderNumber}>#{order.orderNumber}</Text>
@@ -208,6 +217,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+  },
+  batchProgress: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 8,
   },
   deliveryStatus: {
     fontSize: 20,

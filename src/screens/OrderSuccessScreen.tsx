@@ -9,32 +9,70 @@ interface OrderSuccessScreenProps {
   route: {
     params: {
       order: Order;
+      batchedOrders?: Order[];
     };
   };
 }
 
 export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ route }) => {
-  const { order } = route.params;
+  const { order, batchedOrders = [] } = route.params;
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   
   const handleReturnHome = async () => {
     setIsLoading(true);
     try {
-      const result = await OrderStatusService.updateOrderStatus(order.id, 'OnTheWay', {
-        orderCompletedTime: new Date().toISOString(),
-      });
+      if (batchedOrders.length > 0) {
+        // Complete all orders in batch
+        await Promise.all(
+          batchedOrders.map(async (batchOrder) => {
+            const response = await fetch(
+              `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${batchOrder.id}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  orderStatus: 'Completed',
+                  orderCompletedTime: new Date().toISOString(),
+                }),
+              }
+            );
 
-      if (result.success) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }],
-        });
+            if (!response.ok) {
+              throw new Error(`Failed to update order ${batchOrder.id}`);
+            }
+          })
+        );
       } else {
-        Alert.alert('Error', result.error || 'Failed to start delivery');
+        // Complete single order
+        const response = await fetch(
+          `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${order.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              orderStatus: 'Completed',
+              orderCompletedTime: new Date().toISOString(),
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to update order');
+        }
       }
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.error('Error updating orders:', error);
+      Alert.alert('Error', 'Failed to complete orders');
     } finally {
       setIsLoading(false);
     }

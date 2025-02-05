@@ -16,15 +16,21 @@ export type RootStackParamList = {
   OrderStartScreen: {
     order: Order;
     batchedOrders?: Order[];
+    currentBatchIndex?: number;
   };
   OrderDropoffScreen: {
     order: Order;
+    batchedOrders?: Order[];
+    currentBatchIndex?: number;
   };
   OrderCompleteScreen: {
     order: Order;
+    batchedOrders?: Order[];
+    currentBatchIndex?: number;
   };
   OrderSuccess: {
     order: Order;
+    batchedOrders?: Order[];
   };
   OrderReceipt: {
     order: Order;
