@@ -54,7 +54,7 @@ export const OrderDropoffScreen: React.FC<OrderDropoffScreenProps> = ({ route })
   const handleDropoff = async () => {
     setIsLoading(true);
     try {
-      console.log('Updating order:', order.id);
+      const orderDeliveredTime = new Date().toISOString();
       const response = await fetch(
         `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${order.id}`,
         {
@@ -64,30 +64,31 @@ export const OrderDropoffScreen: React.FC<OrderDropoffScreenProps> = ({ route })
           },
           body: JSON.stringify({
             orderStatus: 'Delivered',
-            orderDeliveredTime: new Date().toISOString(),
+            orderReceivedTime: order.orderReceivedTime,
+            orderPickedupTime: order.orderPickedupTime,
+            orderDeliveredTime: orderDeliveredTime,
           }),
         }
       );
 
-      const responseData = await response.json();
-      console.log('API Response:', responseData);
-
       if (!response.ok) {
-        console.error('Response not OK:', response.status, responseData);
         throw new Error('Failed to update order status');
       }
 
-      console.log('Order updated successfully');
       navigation.navigate('OrderCompleteScreen', {
-        order: { ...order, orderStatus: 'Delivered' },
+        order: { 
+          ...order, 
+          orderStatus: 'Delivered',
+          orderDeliveredTime: orderDeliveredTime,
+          orderReceivedTime: order.orderReceivedTime,
+          orderPickedupTime: order.orderPickedupTime
+        },
         batchedOrders,
         currentBatchIndex
       });
     } catch (error) {
       console.error('Error updating order:', error);
       Alert.alert('Error', 'Failed to update order status');
-    } finally {
-      setIsLoading(false);
     }
   };
 

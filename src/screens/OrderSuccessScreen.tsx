@@ -22,49 +22,27 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ route })
   const handleReturnHome = async () => {
     setIsLoading(true);
     try {
-      if (batchedOrders.length > 0) {
-        // Complete all orders in batch
-        await Promise.all(
-          batchedOrders.map(async (batchOrder) => {
-            const response = await fetch(
-              `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${batchOrder.id}`,
-              {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  orderStatus: 'Completed',
-                  orderCompletedTime: new Date().toISOString(),
-                }),
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error(`Failed to update order ${batchOrder.id}`);
+      const finalTime = new Date().toISOString();
+      await Promise.all(
+        batchedOrders.map(async (batchOrder) => {
+          await fetch(
+            `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${batchOrder.id}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                completed: true,
+                orderCompletedTime: finalTime,
+                orderReceivedTime: batchOrder.orderReceivedTime,
+                orderPickedupTime: batchOrder.orderPickedupTime,
+                orderDeliveredTime: batchOrder.orderDeliveredTime
+              }),
             }
-          })
-        );
-      } else {
-        // Complete single order
-        const response = await fetch(
-          `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${order.id}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              orderStatus: 'Completed',
-              orderCompletedTime: new Date().toISOString(),
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to update order');
-        }
-      }
+          );
+        })
+      );
 
       navigation.reset({
         index: 0,

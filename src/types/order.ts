@@ -49,4 +49,7 @@ export interface Order {
   orderReceivedTime?: string;
   orderCompletedTime?: string;
   batchID: string | null;
+  orderPickedupTime?: string;
+  orderOnmywayTime?: string;
+  orderDeliveredTime?: string;
 } 

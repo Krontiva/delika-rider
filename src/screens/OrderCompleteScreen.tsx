@@ -20,7 +20,7 @@ export const OrderCompleteScreen: React.FC<OrderCompleteScreenProps> = ({ route 
 
   const handleConfirm = async () => {
     try {
-      // Update current order status to Delivered
+      const orderCompletedTime = new Date().toISOString();
       const response = await fetch(
         `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${order.id}`,
         {
@@ -29,8 +29,11 @@ export const OrderCompleteScreen: React.FC<OrderCompleteScreenProps> = ({ route 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            orderStatus: 'Completed',
-            orderCompletedTime: new Date().toISOString(),
+            completed: true,
+            orderCompletedTime: orderCompletedTime,
+            orderReceivedTime: order.orderReceivedTime,
+            orderPickedupTime: order.orderPickedupTime,
+            orderDeliveredTime: order.orderDeliveredTime,
           }),
         }
       );
@@ -52,8 +55,11 @@ export const OrderCompleteScreen: React.FC<OrderCompleteScreenProps> = ({ route 
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    orderStatus: 'Completed',
-                    orderCompletedTime: new Date().toISOString(),
+                    completed: true,
+                    orderCompletedTime: orderCompletedTime,
+                    orderReceivedTime: order.orderReceivedTime,
+                    orderPickedupTime: order.orderPickedupTime,
+                    orderDeliveredTime: order.orderDeliveredTime,
                   }),
                 }
               );
@@ -72,12 +78,18 @@ export const OrderCompleteScreen: React.FC<OrderCompleteScreenProps> = ({ route 
       } else {
         // All orders completed, move to success screen
         navigation.navigate('OrderSuccess', { 
-          order,
+          order: { 
+            ...order, 
+            orderCompletedTime,
+            orderReceivedTime: order.orderReceivedTime,
+            orderPickedupTime: order.orderPickedupTime,
+            orderDeliveredTime: order.orderDeliveredTime
+          },
           batchedOrders 
         });
       }
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error('Error updating order:', error);
       Alert.alert('Error', 'Failed to update order status');
     }
   };

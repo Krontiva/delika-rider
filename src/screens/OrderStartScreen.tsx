@@ -32,21 +32,38 @@ export const OrderStartScreen: React.FC<OrderStartScreenProps> = ({ route }) => 
   const handleStart = async () => {
     setIsLoading(true);
     try {
-      const result = await OrderStatusService.updateOrderStatus(order.id, 'OnTheWay', {
-        orderOnmywayTime: new Date().toISOString(),
-      });
+      const orderPickedupTime = new Date().toISOString();
+      const response = await fetch(
+        `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_orders_table/${order.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderStatus: 'OnTheWay',
+            orderPickedupTime: orderPickedupTime,
+            orderOnmywayTime: new Date().toISOString(),
+          }),
+        }
+      );
 
-      if (result.success) {
-        navigation.navigate('OrderDropoffScreen', { 
-          order: { ...order, orderStatus: 'OnTheWay' },
-          batchedOrders,
-          currentBatchIndex
-        });
-      } else {
-        Alert.alert('Error', result.error || 'Failed to start delivery');
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
       }
+
+      navigation.navigate('OrderDropoffScreen', { 
+        order: { 
+          ...order, 
+          orderStatus: 'OnTheWay',
+          orderPickedupTime: orderPickedupTime 
+        },
+        batchedOrders,
+        currentBatchIndex
+      });
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.error('Error updating order:', error);
+      Alert.alert('Error', 'Failed to start delivery');
     } finally {
       setIsLoading(false);
     }
