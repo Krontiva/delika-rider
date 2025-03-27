@@ -1,4 +1,4 @@
-package com.dibelaba.deliveryriderapp
+package com.dibelaba.deliveryapp
 
 import android.os.Build
 import android.os.Bundle

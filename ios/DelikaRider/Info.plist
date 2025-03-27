@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>0.0.1</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -27,13 +27,13 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.dibelaba.deliveryriderapp</string>
+          <string>com.dibelaba.deliveryapp</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+delivery-rider-app</string>
+          <string>exp+delivery-app</string>
         </array>
       </dict>
     </array>
@@ -65,9 +65,6 @@
     <string>We need your location to show nearby orders and track deliveries</string>
     <key>UIBackgroundModes</key>
     <array>
-      <string>location</string>
-      <string>fetch</string>
-      <string>remote-notification</string>
       <string>location</string>
       <string>fetch</string>
       <string>remote-notification</string>

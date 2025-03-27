@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Delika Rider",
-    "slug": "delivery-rider-app",
-    "version": "1.0.0",
+    "slug": "delivery-app",
+    "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,13 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dibelaba.deliveryriderapp",
+      "bundleIdentifier": "com.dibelaba.deliveryapp",
       "userInterfaceStyle": "automatic",
       "infoPlist": {
         "UIBackgroundModes": [
-          "location",
-          "fetch",
-          "remote-notification",
           "location",
           "fetch",
           "remote-notification"
@@ -44,14 +41,10 @@
         "backgroundColor": "#ffffff"
       },
       "icon": "./assets/icon.png",
-      "package": "com.dibelaba.deliveryriderapp",
+      "package": "com.dibelaba.deliveryapp",
       "googleServicesFile": "./google-services.json",
+      "allowBackgroundRunning": true,
       "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_BACKGROUND_LOCATION",
@@ -64,7 +57,9 @@
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK",
         "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE"
       ],
       "config": {
         "googleMaps": {
@@ -93,7 +88,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "459eca2a-b67f-429b-90b0-3678b4a5d47a"
+        "projectId": "ba59de86-8211-47d7-a553-1ad5d3e094c8"
       }
     },
     "runtimeVersion": "1.0.0",

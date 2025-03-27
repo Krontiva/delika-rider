@@ -26,6 +26,25 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:403864169704:android:4ebba6face7b6b452d6d5d",
+        "android_client_info": {
+          "package_name": "com.dibelaba.deliveryapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzsJ3K5Uigz9B1jnNFGt3DE1k_wh9ZEp8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:403864169704:android:945aed012477e38f2d6d5d",
         "android_client_info": {
           "package_name": "com.dibelaba.deliveryriderapp"
